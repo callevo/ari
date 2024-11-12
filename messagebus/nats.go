@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	commands "github.com/cripito/ari/command"
-	logs "github.com/cripito/ari/logs"
-	"github.com/cripito/ari/proxy"
-	requests "github.com/cripito/ari/requests"
+	commands "github.com/callevo/ari/command"
+	logs "github.com/callevo/ari/logs"
+	proxy "github.com/callevo/ari/proxy"
+	requests "github.com/callevo/ari/requests"
 	nats "github.com/nats-io/nats.go"
 )
 

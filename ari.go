@@ -3,10 +3,10 @@ package ari
 import (
 	"time"
 
-	commands "github.com/cripito/ari/command"
-	"github.com/cripito/ari/logs"
-	"github.com/cripito/ari/messagebus"
-	"github.com/cripito/ari/proxy"
+	commands "github.com/callevo/ari/command"
+	"github.com/callevo/ari/logs"
+	"github.com/callevo/ari/messagebus"
+	"github.com/callevo/ari/proxy"
 	nats "github.com/nats-io/nats.go"
 )
 
