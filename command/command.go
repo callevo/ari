@@ -7,10 +7,9 @@ type Command interface {
 type CommandType int
 
 const (
-	AsteriskInfoCommand CommandType = iota + 1
-	Ping
+	Ping CommandType = iota + 1
 )
 
 func (w CommandType) String() string {
-	return [...]string{"asteriskinfo", "ping"}[w-1]
+	return [...]string{"ping"}[w-1]
 }

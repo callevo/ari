@@ -7,6 +7,8 @@ import (
 	"github.com/callevo/ari/logs"
 	"github.com/callevo/ari/messagebus"
 	"github.com/callevo/ari/proxy"
+	"github.com/callevo/ari/requests"
+	"github.com/lrita/cmap"
 	nats "github.com/nats-io/nats.go"
 )
 
@@ -15,10 +17,11 @@ type ARIClient struct {
 	ConnectionName string
 	NATSUrl        string
 
-	announceSubs messagebus.Subscription
-	proxysubs    messagebus.Subscription
+	announceSubs *nats.Subscription
+	proxysubs    *nats.Subscription
 
-	sbus *messagebus.NatsBus
+	sbus         *messagebus.NatsBus
+	_ast_cluster cmap.Cmap
 }
 
 func NewClient() *ARIClient {
@@ -60,6 +63,22 @@ func (a *ARIClient) Listen(opts *Options, natsURL string) error {
 	logs.TLogger.Debug().Msg("subscribing to announce")
 	a.announceSubs, err = a.sbus.SubscribeAnnounce(a.ConnectionName+".announce.*", func(o *proxy.Announcement) {
 		logs.TLogger.Debug().Msgf("O: %+v", o)
+
+		if o.Node != "" {
+			// we need to look in the list
+			requestTopic := a.ConnectionName + "." + a.Application + ".get." + o.Node
+			astInfo := requests.NewAsteriskInfoRequest()
+			astInfo.SetAsteriskID(o.Node)
+
+			p, err := a.sbus.Request(requestTopic, astInfo)
+			if err != nil {
+				logs.TLogger.Debug().Msgf("error!! %+v", err)
+
+				return
+			}
+
+			logs.TLogger.Debug().Msgf("O: %+v", p)
+		}
 	})
 	if err != nil {
 		logs.TLogger.Debug().Msgf("error!! %+v", err)
@@ -68,9 +87,19 @@ func (a *ARIClient) Listen(opts *Options, natsURL string) error {
 	}
 
 	logs.TLogger.Debug().Msg("subscribing to events")
-	a.proxysubs, err = a.sbus.SubscribeEvent(a.ConnectionName+"."+a.Application+".>", func(o *proxy.Events) {
+	a.proxysubs, err = a.sbus.SubscribeEvent(a.ConnectionName+"."+a.Application+".events.>", func(o *proxy.AriEvent) {
 		logs.TLogger.Debug().Msgf("O: %+v", o)
+
+		switch o.GetType() {
+
+		}
+
 	})
+	if err != nil {
+		logs.TLogger.Debug().Msgf("error!! %+v", err)
+
+		return err
+	}
 
 	return nil
 }

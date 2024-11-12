@@ -143,7 +143,7 @@ func (n *NatsBus) Close() {
 type AnnounceHandler func(o *proxy.Announcement)
 
 // EventHandler Handles Events
-type EventHandler func(o *proxy.Events)
+type EventHandler func(o *proxy.AriEvent)
 
 // SubscribeAnnounce subscribe announce messages
 func (n *NatsBus) SubscribeAnnounce(topic string, callback AnnounceHandler) (*nats.Subscription, error) {
@@ -167,16 +167,33 @@ var ListenQueue = "AsteriskARIProxyDistributionQueue"
 func (n *NatsBus) SubscribeEvent(topic string, callback EventHandler) (*nats.Subscription, error) {
 	logs.TLogger.Debug().Msgf("Subscribing to %s", topic)
 
-	return nil, nil
+	return n.conn.QueueSubscribe(topic, ListenQueue, func(msg *nats.Msg) {
+
+		evt := proxy.AriEvent{}
+
+		err := json.Unmarshal(msg.Data, &evt)
+		if err != nil {
+			return
+		}
+
+		if callback != nil {
+			callback(&evt)
+		}
+	})
 }
 
-func (n *NatsBus) Request(r *requests.Request) error {
+func (n *NatsBus) Request(topic string, r requests.Request) (*nats.Msg, error) {
 
 	if n.conn == nil {
-		return fmt.Errorf("Nil connection")
+		return nil, fmt.Errorf("nil connection")
 	}
 
-	n.conn.
+	b, err := json.Marshal(r)
+	if err != nil {
+		logs.TLogger.Debug().Msgf("err %s", err)
 
-	return nil
+		return nil, err
+	}
+
+	return n.conn.Request(topic, b, 3*time.Second)
 }

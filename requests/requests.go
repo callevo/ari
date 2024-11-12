@@ -27,6 +27,6 @@ func (a *AsteriskInfoRequest) GetAsteriskID() string {
 	return a.ASteriskID
 }
 
-func (a *AsteriskInfoRequest) SetAsteriskID(id stgring) {
+func (a *AsteriskInfoRequest) SetAsteriskID(id string) {
 	a.ASteriskID = id
 }
