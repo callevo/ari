@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	commands "github.com/callevo/ari/command"
+	arievent "github.com/callevo/ari/arievent"
+	cluster "github.com/callevo/ari/cluster"
 	logs "github.com/callevo/ari/logs"
-	proxy "github.com/callevo/ari/proxy"
 	requests "github.com/callevo/ari/requests"
+	"github.com/callevo/ari/response"
 	nats "github.com/nats-io/nats.go"
 )
 
@@ -113,17 +114,8 @@ func (n *NatsBus) Connect() error {
 	return nil
 }
 
-func (n *NatsBus) PublishCommand(topic string, cmd commands.Command) error {
-	b, err := json.Marshal(cmd)
-	if err != nil {
-		return err
-	}
-
-	return n.conn.Publish(topic, b)
-}
-
 // PublishAnnounce sends announce message
-func (n *NatsBus) PublishAnnounce(topic string, msg *proxy.Announcement) error {
+func (n *NatsBus) PublishAnnounce(topic string, msg *cluster.Announcement) error {
 	b, err := json.Marshal(msg)
 	if err != nil {
 		return err
@@ -140,16 +132,16 @@ func (n *NatsBus) Close() {
 }
 
 // AnnounceHandler handles announce messages
-type AnnounceHandler func(o *proxy.Announcement)
+type AnnounceHandler func(o *cluster.Announcement)
 
 // EventHandler Handles Events
-type EventHandler func(o *proxy.AriEvent)
+type EventHandler func(o *arievent.StasisEvent)
 
 // SubscribeAnnounce subscribe announce messages
 func (n *NatsBus) SubscribeAnnounce(topic string, callback AnnounceHandler) (*nats.Subscription, error) {
 	logs.TLogger.Debug().Msgf("Subscribing to %s", topic)
 	return n.conn.Subscribe(topic, func(msg *nats.Msg) {
-		evt := proxy.Announcement{}
+		evt := cluster.Announcement{}
 
 		logs.TLogger.Debug().Msgf("We got %s", msg.Data)
 		err := json.Unmarshal(msg.Data, &evt)
@@ -161,7 +153,7 @@ func (n *NatsBus) SubscribeAnnounce(topic string, callback AnnounceHandler) (*na
 	})
 }
 
-// ListenQueue is the queue group to use for distributing StasisStart events to Listeners.
+// ListenQueue is the queue group to use for distributing arieventStart events to Listeners.
 var ListenQueue = "AsteriskARIProxyDistributionQueue"
 
 func (n *NatsBus) SubscribeEvent(topic string, callback EventHandler) (*nats.Subscription, error) {
@@ -169,7 +161,9 @@ func (n *NatsBus) SubscribeEvent(topic string, callback EventHandler) (*nats.Sub
 
 	return n.conn.QueueSubscribe(topic, ListenQueue, func(msg *nats.Msg) {
 
-		evt := proxy.AriEvent{}
+		evt := arievent.StasisEvent{}
+
+		logs.TLogger.Debug().Msgf("We got %s", (string)(msg.Data))
 
 		err := json.Unmarshal(msg.Data, &evt)
 		if err != nil {
@@ -182,7 +176,24 @@ func (n *NatsBus) SubscribeEvent(topic string, callback EventHandler) (*nats.Sub
 	})
 }
 
-func (n *NatsBus) Request(topic string, r requests.Request) (*nats.Msg, error) {
+func (n *NatsBus) DynSubscription(topic string, callback EventHandler) (*nats.Subscription, error) {
+	logs.TLogger.Debug().Msgf("Subscribing to %s", topic+".>")
+
+	return n.conn.Subscribe(topic+".>", func(msg *nats.Msg) {
+		evt := arievent.StasisEvent{}
+
+		err := json.Unmarshal(msg.Data, &evt)
+		if err != nil {
+			return
+		}
+
+		if callback != nil {
+			callback(&evt)
+		}
+	})
+}
+
+func (n *NatsBus) Request(topic string, r *requests.Request) (*response.Response, error) {
 
 	if n.conn == nil {
 		return nil, fmt.Errorf("nil connection")
@@ -195,5 +206,22 @@ func (n *NatsBus) Request(topic string, r requests.Request) (*nats.Msg, error) {
 		return nil, err
 	}
 
-	return n.conn.Request(topic, b, 3*time.Second)
+	msg, err := n.conn.Request(topic, b, 3*time.Second)
+	if err != nil {
+		logs.TLogger.Debug().Msgf("err %s", err)
+
+		return nil, err
+	}
+
+	resp := &response.Response{}
+	err = json.Unmarshal(msg.Data, resp)
+	if err != nil {
+		logs.TLogger.Debug().Msgf("err %s", err)
+
+		return nil, err
+	}
+
+	logs.TLogger.Debug().Msgf("we got this response: %+v", resp)
+
+	return resp, nil
 }

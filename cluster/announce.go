@@ -1,4 +1,4 @@
-package proxy
+package cluster
 
 // Announcement describes the structure of an ARI proxy's announcement of availability on the network.  These are sent periodically and upon request (by a Ping).
 type Announcement struct {
