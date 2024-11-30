@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/callevo/ari/arioptions"
-	"github.com/callevo/ari/channel"
 	"github.com/callevo/ari/key"
+	"github.com/callevo/ari/requests"
 )
 
 type Response struct {
@@ -114,7 +114,7 @@ type BridgeVideoSource struct {
 // ChannelCreate describes a request to create a new channel
 type ChannelCreate struct {
 	// ChannelCreateRequest is the request for creating the channel
-	ChannelCreateRequest channel.ChannelCreateRequest `json:"channel_create_request"`
+	ChannelCreateRequest requests.ChannelCreateRequest `json:"channel_create_request"`
 }
 
 // ChannelContinue describes a request to continue an ARI application

@@ -313,6 +313,9 @@ func (c *ARIClient) dataRequest(req *requests.Request) (*response.EntityData, er
 	if resp.Data == nil {
 		return nil, ErrNil
 	}
+
+	logs.TLogger.Debug().Msgf("we got %+v", resp.Data)
+
 	return resp.Data, nil
 }
 

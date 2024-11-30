@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/callevo/ari/asterisk"
+	"github.com/callevo/ari/bridge"
 	"github.com/callevo/ari/channel"
 	"github.com/callevo/ari/key"
 )
@@ -32,6 +33,9 @@ type Response struct {
 type EntityData struct {
 	Channel  *channel.ChannelData   `json:"channel,omitempty"`
 	Asterisk *asterisk.AsteriskInfo `json:"asterisk,omitempty"`
+	Bridge   *bridge.BridgeData     `json:"bridge,omitempty"`
+
+	Variable string `json:"variable,omitempty"`
 }
 
 // Err returns an error from the Response.  If the response's Error is empty, a nil error is returned.  Otherwise, the error will be filled with the value of response.Error.

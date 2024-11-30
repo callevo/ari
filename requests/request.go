@@ -55,6 +55,30 @@ type Request struct {
 	SoundList *SoundList `json:"sound_list,omitempty"`
 }
 
+type ChannelCreateRequest struct {
+	// Endpoint is the target endpoint for the dial
+	Endpoint string `json:"endpoint"`
+
+	// App is the name of the Stasis application to execute on connection
+	App string `json:"app"`
+
+	// AppArgs is the set of (comma-separated) arguments for the Stasis App
+	AppArgs string `json:"appArgs,omitempty"`
+
+	// ChannelID is the ID to give to the newly-created channel
+	ChannelID string `json:"channelId,omitempty"`
+
+	// OtherChannelID is the ID of the second created channel (when creating Local channels)
+	OtherChannelID string `json:"otherChannelId,omitempty"`
+
+	// Originator is the unique ID of the calling channel, for which this new channel-dial is being created
+	Originator string `json:"originator,omitempty"`
+
+	// Formats is the comma-separated list of valid codecs to allow for the new channel, in the case that
+	// the Originator is not specified
+	Formats string `json:"formats,omitempty"`
+}
+
 // ApplicationSubscribe describes a request to subscribe/unsubscribe a particular ARI application to an EventSource
 type ApplicationSubscribe struct {
 	// EventSource is the ARI event source to which the subscription is requested.  This should be one of:
@@ -136,7 +160,7 @@ type BridgeVideoSource struct {
 // ChannelCreate describes a request to create a new channel
 type ChannelCreate struct {
 	// ChannelCreateRequest is the request for creating the channel
-	ChannelCreateRequest arioptions.ChannelCreateRequest `json:"channel_create_request"`
+	ChannelCreateRequest ChannelCreateRequest `json:"channel_create_request"`
 }
 
 // ChannelContinue describes a request to continue an ARI application
@@ -181,7 +205,7 @@ type ChannelMute struct {
 // ChannelOriginate is the request for creating a channel
 type ChannelOriginate struct {
 	// OriginateRequest contains the information for originating a channel
-	OriginateRequest arioptions.OriginateRequest `json:"originate_request"`
+	OriginateRequest OriginateRequest `json:"originate_request"`
 }
 
 // ChannelPlay is the request for playing audio on a channel

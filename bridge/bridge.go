@@ -16,7 +16,7 @@ type Bridge interface {
 	Get(key *key.Key) *BridgeHandle
 
 	// Lists returns the lists of bridges in asterisk, optionally using the key for filtering.
-	List(*key.Key) ([]*key.Key, error)
+	//List(*key.Key) ([]*key.Key, error)
 
 	// Data gets the bridge data
 	Data(key *key.Key) (*BridgeData, error)
