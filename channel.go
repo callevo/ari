@@ -6,7 +6,9 @@ import (
 	"github.com/callevo/ari/arioptions"
 	"github.com/callevo/ari/channel"
 	"github.com/callevo/ari/key"
+	"github.com/callevo/ari/play"
 	"github.com/callevo/ari/requests"
+	"github.com/callevo/ari/rid"
 )
 
 type ichannel struct {
@@ -241,4 +243,64 @@ func (c *ichannel) Originate(referenceKey *key.Key, o requests.OriginateRequest)
 		return nil, err
 	}
 	return channel.NewChannelHandle(k, c, nil), nil
+}
+
+func (c *ichannel) Play(ikey *key.Key, playbackID string, mediaURI string) (*play.PlaybackHandle, error) {
+	if playbackID == "" {
+		playbackID = rid.New(rid.Playback)
+	}
+
+	k, err := c.c.createRequest(&requests.Request{
+		Kind: "ChannelPlay",
+		Key:  ikey,
+		ChannelPlay: &requests.ChannelPlay{
+			PlaybackID: playbackID,
+			MediaURI:   mediaURI,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return play.NewPlaybackHandle(k.New(key.PlaybackKey, playbackID), c.c.Playback(), nil), nil
+}
+
+func (c *ichannel) ExternalMedia(referenceKey *key.Key, opts arioptions.ExternalMediaOptions) (*channel.ChannelHandle, error) {
+	if opts.ChannelID == "" {
+		opts.ChannelID = rid.New(rid.Channel)
+	}
+	k, err := c.c.createRequest(&requests.Request{
+		Kind: "ChannelExternalMedia",
+		Key:  referenceKey,
+		ChannelExternalMedia: &requests.ChannelExternalMedia{
+			Options: opts,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return channel.NewChannelHandle(k, c, nil), nil
+}
+
+func (c *ichannel) StageExternalMedia(referenceKey *key.Key, opts arioptions.ExternalMediaOptions) (*channel.ChannelHandle, error) {
+	if opts.ChannelID == "" {
+		opts.ChannelID = rid.New(rid.Channel)
+	}
+
+	// We go ahead an call the createRequest on the server so that we lock in an
+	// Asterisk box at the time of staging even though this staging call will
+	// never actually be used.
+	k, err := c.c.createRequest(&requests.Request{
+		Kind: "ChannelStageOriginate",
+		Key:  referenceKey,
+		ChannelExternalMedia: &requests.ChannelExternalMedia{
+			Options: opts,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return channel.NewChannelHandle(k, c, func(h *channel.ChannelHandle) error {
+		_, err := c.ExternalMedia(k, opts)
+		return err
+	}), nil
 }

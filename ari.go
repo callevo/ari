@@ -15,6 +15,7 @@ import (
 	"github.com/callevo/ari/key"
 	"github.com/callevo/ari/logs"
 	"github.com/callevo/ari/messagebus"
+	"github.com/callevo/ari/play"
 	"github.com/callevo/ari/requests"
 	"github.com/callevo/ari/response"
 	"github.com/lrita/cmap"
@@ -33,8 +34,11 @@ type ARIClient struct {
 	announceSubs *nats.Subscription
 	proxysubs    *nats.Subscription
 
-	sbus              *messagebus.NatsBus
-	_ast_cluster      cmap.Cmap
+	sbus *messagebus.NatsBus
+
+	// cluster describes the cluster of ARI proxies
+	cluster *cluster.Cluster
+
 	_dynSubscriptions cmap.Cmap
 
 	_dispatcher *dispatcher.EventDispatcher
@@ -90,40 +94,16 @@ func (a *ARIClient) Listen(ctx context.Context, opts *Options, exechandler Stasi
 		return err
 	}
 
+	a.cluster = cluster.New()
+
 	logs.TLogger.Debug().Msg("subscribing to announce")
 	a.announceSubs, err = a.sbus.SubscribeAnnounce(a.ConnectionName+".announce.*", func(o *cluster.Announcement) {
-		//logs.TLogger.Debug().Msgf("O: %+v", o)
-
-		if o.Node != "" {
-			// we need to look in the list
-			/*
-				requestTopic := a.ConnectionName + "." + a.Application + ".get." + o.Node
-				astInfo := requests.NewAsteriskInfoRequest()
-				astInfo.SetAsteriskID(o.Node)
-
-				p, err := a.sbus.Request(requestTopic, astInfo)
-				if err != nil {
-					logs.TLogger.Debug().Msgf("error!! %+v", err)
-
-					return
-				}
-
-				var rsp map[string]interface{}
-				err = json.Unmarshal(p.Data, &rsp)
-				if err != nil {
-					logs.TLogger.Debug().Msgf("error!! %+v", err)
-
-					return
-				}
-
-				logs.TLogger.Debug().Msgf("Rsp: %+v", rsp)
-			*/
-		}
+		a.cluster.Update(o.Node, o.Application)
 	})
 	if err != nil {
-		logs.TLogger.Debug().Msgf("error!! %+v", err)
+		logs.TLogger.Debug().Msgf("error!! %+v", eris.Wrap(err, "failed to listen to proxy announcements"))
 
-		return err
+		return eris.Wrap(err, "failed to listen to proxy announcements")
 	}
 
 	logs.TLogger.Debug().Msg("Queue subscribing to stasisstart events %s")
@@ -277,7 +257,7 @@ func (c *ARIClient) makeRequest(class string, req *requests.Request) (*response.
 		return nil, err
 	}
 
-	logs.TLogger.Debug().Msgf("Sending request to %s", c.subject(class, req))
+	logs.TLogger.Debug().Msgf("Sending request to %s for %s", c.subject(class, req), req.Kind)
 	return c.sbus.Request(c.subject(class, req), req)
 }
 
@@ -293,12 +273,19 @@ func (c *ARIClient) getRequest(req *requests.Request) (*key.Key, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if resp == nil {
+		return nil, ErrNil
+	}
+
 	if resp.Err() != nil {
 		return nil, resp.Err()
 	}
+
 	if resp.Key == nil {
 		return nil, ErrNil
 	}
+
 	return resp.Key, nil
 }
 
@@ -331,4 +318,9 @@ func (c *ARIClient) createRequest(req *requests.Request) (*key.Key, error) {
 		return nil, ErrNil
 	}
 	return resp.Key, nil
+}
+
+// Playback is the media playback accessor
+func (c *ARIClient) Playback() play.Playback {
+	return &playback{c}
 }

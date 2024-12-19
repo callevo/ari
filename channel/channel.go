@@ -6,6 +6,7 @@ import (
 
 	"github.com/callevo/ari/arioptions"
 	"github.com/callevo/ari/key"
+	"github.com/callevo/ari/play"
 	"github.com/callevo/ari/requests"
 )
 
@@ -92,7 +93,7 @@ type Channel interface {
 	StopSilence(key *key.Key) error
 
 	// Play plays the media URI to the channel
-	//Play(key *key.Key, playbackID string, mediaURI string) (*PlaybackHandle, error)
+	Play(key *key.Key, playbackID string, mediaURI string) (*play.PlaybackHandle, error)
 
 	// StagePlay stages a `Play` operation and returns the `PlaybackHandle`
 	// for invoking it.
@@ -119,10 +120,10 @@ type Channel interface {
 	// when `Exec`ed, by which audio may be sent or received.  The stage version
 	// of this command will not actually communicate with Asterisk until Exec is
 	// called on the returned ExternalMedia channel.
-	//StageExternalMedia(key *Key, opts ExternalMediaOptions) (*ChannelHandle, error)
+	StageExternalMedia(key *key.Key, opts arioptions.ExternalMediaOptions) (*ChannelHandle, error)
 
 	// ExternalMedia creates a new non-telephony external media channel by which audio may be sent or received
-	//ExternalMedia(key *Key, opts ExternalMediaOptions) (*ChannelHandle, error)
+	ExternalMedia(key *key.Key, opts arioptions.ExternalMediaOptions) (*ChannelHandle, error)
 
 	// UserEvent Sends user-event to AMI channel subscribers
 	//UserEvent(key *Key, ue *ChannelUserevent) error
@@ -213,9 +214,9 @@ func (ch *ChannelHandle) Continue(context, extension string, priority int) error
 
 // Play initiates playback of the specified media uri
 // to the channel, returning the Playback handle
-//func (ch *ChannelHandle) Play(id string, mediaURI string) (ph *PlaybackHandle, err error) {
-//	return nil, nil
-//}
+func (ch *ChannelHandle) Play(id string, mediaURI string) (ph *play.PlaybackHandle, err error) {
+	return ch.c.Play(ch.key, id, mediaURI)
+}
 
 // Record records the channel to the given filename
 //func (ch *ChannelHandle) Record(name string, opts *RecordingOptions) (*LiveRecordingHandle, error) {
@@ -385,14 +386,14 @@ func (ch *ChannelHandle) StageSnoop(snoopID string, opts *arioptions.SnoopOption
 // when `Exec`ed, by which audio may be sent or received.  The stage version
 // of this command will not actually communicate with Asterisk until Exec is
 // called on the returned ExternalMedia channel.
-//func (ch *ChannelHandle) StageExternalMedia(opts ExternalMediaOptions) (*ChannelHandle, error) {/
-//	return nil
-//}
+func (ch *ChannelHandle) StageExternalMedia(opts arioptions.ExternalMediaOptions) (*ChannelHandle, error) {
+	return ch.c.StageExternalMedia(ch.key, opts)
+}
 
 // ExternalMedia creates a new non-telephony external media channel by which audio may be sent or received
-//func (ch *ChannelHandle) ExternalMedia(opts ExternalMediaOptions) (*ChannelHandle, error) {
-//	return nil
-//}
+func (ch *ChannelHandle) ExternalMedia(opts arioptions.ExternalMediaOptions) (*ChannelHandle, error) {
+	return ch.c.ExternalMedia(ch.key, opts)
+}
 
 // Silence operations
 // --
@@ -419,36 +420,6 @@ func (ch *ChannelHandle) SendDTMF(dtmf string, opts *arioptions.DTMFOptions) err
 //func (ch *ChannelHandle) UserEvent(key *Key, ue *ChannelUserevent) error {
 //	return nil
 //}
-
-// ExternalMediaOptions describes the parameters to the externalMedia channel creation operation
-type ExternalMediaOptions struct {
-	// ChannelID specifies the channel ID to be used for the external media channel.  This parameter is optional and if not specified, a randomly-generated channel ID will be used.
-	ChannelID string `json:"channelId"`
-
-	// App is the ARI Application to which the newly-created external media channel should be placed.  This parameter is optional and if not specified, the current application will be used.
-	App string `json:"app"`
-
-	// ExternalHost specifies the <host>:<port> of the external host to which the external media channel will be connected.  This parameter is MANDATORY and has no default.
-	ExternalHost string `json:"external_host"`
-
-	// Encapsulation specifies the payload encapsulation which should be used.  Options include:  'rtp'.  This parameter is optional and if not specified, 'rtp' will be used.
-	Encapsulation string `json:"encapsulation"`
-
-	// Transport specifies the connection type to be used to communicate to the external server.  Options include 'udp'.  This parameter is optional and if not specified, 'udp' will be used.
-	Transport string `json:"transport"`
-
-	// ConnectionType defined the directionality of the network connection.  Options include 'client' and 'server'.  This parameter is optional and if not specified, 'client' will be used.
-	ConnectionType string `json:"connection_type"`
-
-	// Format specifies the codec to be used for the audio.  Options include 'slin16', 'ulaw' (and likely other codecs supported by Asterisk).  This parameter is MANDATORY and has not default.
-	Format string `json:"format"`
-
-	// Direction specifies the directionality of the audio stream.  Options include 'both'.  This parameter is optional and if not specified, 'both' will be used.
-	Direction string `json:"direction"`
-
-	// Variables defines the set of channel variables which should be bound to this channel upon creation.  This parameter is optional.
-	Variables map[string]string `json:"variables"`
-}
 
 //Code taken from ari-proxy. NOt verbatim, but with enough similarities to make this work .
 //Key was a copy from ari-proxy

@@ -213,6 +213,8 @@ func (n *NatsBus) Request(topic string, r *requests.Request) (*response.Response
 		return nil, err
 	}
 
+	logs.TLogger.Debug().Msgf("we got this response: %s", msg.Data)
+
 	resp := &response.Response{}
 	err = json.Unmarshal(msg.Data, resp)
 	if err != nil {
@@ -220,8 +222,6 @@ func (n *NatsBus) Request(topic string, r *requests.Request) (*response.Response
 
 		return nil, err
 	}
-
-	logs.TLogger.Debug().Msgf("we got this response: %+v", resp)
 
 	return resp, nil
 }
