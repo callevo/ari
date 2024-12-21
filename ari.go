@@ -16,6 +16,7 @@ import (
 	"github.com/callevo/ari/logs"
 	"github.com/callevo/ari/messagebus"
 	"github.com/callevo/ari/play"
+	"github.com/callevo/ari/recordings"
 	"github.com/callevo/ari/requests"
 	"github.com/callevo/ari/response"
 	"github.com/lrita/cmap"
@@ -289,6 +290,33 @@ func (c *ARIClient) getRequest(req *requests.Request) (*key.Key, error) {
 	return resp.Key, nil
 }
 
+func (c *ARIClient) listRequest(req *requests.Request) ([]*key.Key, error) {
+	var list []*key.Key
+
+	resp, err := c.makeRequest("get", req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Err() != nil {
+		return nil, resp.Err()
+	}
+	if resp.Data == nil {
+		return nil, ErrNil
+	}
+	logs.TLogger.Debug().Msgf("we got %+v", resp)
+
+	/*
+		for _, r := range responses {
+			err = r.Err()
+			if r.Err() != nil || r.Keys == nil {
+				continue
+			}
+			list = append(list, r.Keys...)
+		}
+	*/
+	return list, err
+}
+
 func (c *ARIClient) dataRequest(req *requests.Request) (*response.EntityData, error) {
 	resp, err := c.makeRequest("data", req)
 	if err != nil {
@@ -323,4 +351,14 @@ func (c *ARIClient) createRequest(req *requests.Request) (*key.Key, error) {
 // Playback is the media playback accessor
 func (c *ARIClient) Playback() play.Playback {
 	return &playback{c}
+}
+
+// LiveRecording is the live recording accessor
+func (c *ARIClient) LiveRecording() recordings.LiveRecording {
+	return &iLifeRecording{c}
+}
+
+// StoredRecording is the stored recording accessor
+func (c *ARIClient) StoredRecording() recordings.StoredRecording {
+	return &iStoredRecording{c}
 }

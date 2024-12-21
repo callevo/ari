@@ -8,6 +8,7 @@ import (
 	"github.com/callevo/ari/channel"
 	"github.com/callevo/ari/key"
 	"github.com/callevo/ari/play"
+	"github.com/callevo/ari/recordings"
 )
 
 // ErrNotFound indicates that the operation did not return a result
@@ -30,10 +31,13 @@ type Response struct {
 }
 
 type EntityData struct {
-	Channel  *channel.ChannelData   `json:"channel,omitempty"`
-	Asterisk *asterisk.AsteriskInfo `json:"asterisk,omitempty"`
-	Bridge   *bridge.BridgeData     `json:"bridge,omitempty"`
-	Playback *play.PlaybackData     `json:"playback,omitempty"`
+	Channel         *channel.ChannelData            `json:"channel,omitempty"`
+	Asterisk        *asterisk.AsteriskInfo          `json:"asterisk,omitempty"`
+	Bridge          *bridge.BridgeData              `json:"bridge,omitempty"`
+	Playback        *play.PlaybackData              `json:"playback,omitempty"`
+	StoredRecording *recordings.StoredRecordingData `json:"stored_recording,omitempty"`
+	LiveRecording   *recordings.LiveRecordingData   `json:"live_recording,omitempty"`
+	ChannelList     []*channel.ChannelData          `json:"channellist,omitempty"`
 
 	Variable string `json:"variable,omitempty"`
 }

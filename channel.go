@@ -7,12 +7,20 @@ import (
 	"github.com/callevo/ari/channel"
 	"github.com/callevo/ari/key"
 	"github.com/callevo/ari/play"
+	"github.com/callevo/ari/recordings"
 	"github.com/callevo/ari/requests"
 	"github.com/callevo/ari/rid"
 )
 
 type ichannel struct {
 	c *ARIClient
+}
+
+func (c *ichannel) List(filter *key.Key) ([]*key.Key, error) {
+	return c.c.listRequest(&requests.Request{
+		Kind: "ChannelList",
+		Key:  filter,
+	})
 }
 
 func (c *ichannel) Create(ikey *key.Key, o requests.ChannelCreateRequest) (*channel.ChannelHandle, error) {
@@ -262,6 +270,21 @@ func (c *ichannel) Play(ikey *key.Key, playbackID string, mediaURI string) (*pla
 		return nil, err
 	}
 	return play.NewPlaybackHandle(k.New(key.PlaybackKey, playbackID), c.c.Playback(), nil), nil
+}
+
+func (c *ichannel) Record(ikey *key.Key, name string, opts *arioptions.RecordingOptions) (*recordings.LiveRecordingHandle, error) {
+	rb, err := c.c.createRequest(&requests.Request{
+		Kind: "ChannelRecord",
+		Key:  ikey,
+		ChannelRecord: &requests.ChannelRecord{
+			Name:    name,
+			Options: opts,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return recordings.NewLiveRecordingHandle(rb.New(key.LiveRecordingKey, name), c.c.LiveRecording(), nil), nil
 }
 
 func (c *ichannel) ExternalMedia(referenceKey *key.Key, opts arioptions.ExternalMediaOptions) (*channel.ChannelHandle, error) {

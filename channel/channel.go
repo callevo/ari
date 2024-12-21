@@ -7,6 +7,7 @@ import (
 	"github.com/callevo/ari/arioptions"
 	"github.com/callevo/ari/key"
 	"github.com/callevo/ari/play"
+	"github.com/callevo/ari/recordings"
 	"github.com/callevo/ari/requests"
 )
 
@@ -18,7 +19,7 @@ type Channel interface {
 	GetVariable(*key.Key, string) (string, error)
 
 	// List lists the channels in asterisk, optionally using the key for filtering
-	//List(*key.Key) ([]*key.Key, error)
+	List(*key.Key) ([]*key.Key, error)
 
 	// Originate creates a new channel, returning a handle to it or an error, if
 	// the creation failed.
@@ -100,7 +101,7 @@ type Channel interface {
 	//StagePlay(key *key.Key, playbackID string, mediaURI string) (*PlaybackHandle, error)
 
 	// Record records the channel
-	//Record(key *Key, name string, opts *RecordingOptions) (*LiveRecordingHandle, error)
+	Record(key *key.Key, name string, opts *arioptions.RecordingOptions) (*recordings.LiveRecordingHandle, error)
 
 	// StageRecord stages a `Record` operation and returns the `PlaybackHandle`
 	// for invoking it.
@@ -197,6 +198,10 @@ func (ch *ChannelHandle) ID() string {
 	return ch.key.ID
 }
 
+func (ch *ChannelHandle) List(key *key.Key) ([]*key.Key, error) {
+	return ch.c.List(key)
+}
+
 // Key returns the key for the channel handle
 func (ch *ChannelHandle) Key() *key.Key {
 	return ch.key
@@ -219,9 +224,9 @@ func (ch *ChannelHandle) Play(id string, mediaURI string) (ph *play.PlaybackHand
 }
 
 // Record records the channel to the given filename
-//func (ch *ChannelHandle) Record(name string, opts *RecordingOptions) (*LiveRecordingHandle, error) {
-//	return nil, nil//
-//}
+func (ch *ChannelHandle) Record(name string, opts *arioptions.RecordingOptions) (*recordings.LiveRecordingHandle, error) {
+	return ch.c.Record(ch.key, name, opts)
+}
 
 //---
 // Hangup Operations

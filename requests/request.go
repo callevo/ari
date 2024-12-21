@@ -19,23 +19,23 @@ type Request struct {
 	AsteriskLoggingChannel *AsteriskLoggingChannel `json:"asterisk_logging_channel,omitempty"`
 	AsteriskVariableSet    *AsteriskVariableSet    `json:"asterisk_variable_set,omitempty"`
 
-	BridgeAddChannel *BridgeAddChannel `json:"bridge_add_channel,omitempty"`
-	BridgeCreate     *BridgeCreate     `json:"bridge_create,omitempty"`
-	BridgeMOH        *BridgeMOH        `json:"bridge_moh,omitempty"`
-	BridgePlay       *BridgePlay       `json:"bridge_play,omitempty"`
-	//BridgeRecord        *BridgeRecord        `json:"bridge_record,omitempty"`
+	BridgeAddChannel    *BridgeAddChannel    `json:"bridge_add_channel,omitempty"`
+	BridgeCreate        *BridgeCreate        `json:"bridge_create,omitempty"`
+	BridgeMOH           *BridgeMOH           `json:"bridge_moh,omitempty"`
+	BridgePlay          *BridgePlay          `json:"bridge_play,omitempty"`
+	BridgeRecord        *BridgeRecord        `json:"bridge_record,omitempty"`
 	BridgeRemoveChannel *BridgeRemoveChannel `json:"bridge_remove_channel,omitempty"`
 	BridgeVideoSource   *BridgeVideoSource   `json:"bridge_video_source,omitempty"`
 
-	ChannelCreate    *ChannelCreate    `json:"channel_create,omitempty"`
-	ChannelContinue  *ChannelContinue  `json:"channel_continue,omitempty"`
-	ChannelDial      *ChannelDial      `json:"channel_dial,omitempty"`
-	ChannelHangup    *ChannelHangup    `json:"channel_hangup,omitempty"`
-	ChannelMOH       *ChannelMOH       `json:"channel_moh,omitempty"`
-	ChannelMute      *ChannelMute      `json:"channel_mute,omitempty"`
-	ChannelOriginate *ChannelOriginate `json:"channel_originate,omitempty"`
-	ChannelPlay      *ChannelPlay      `json:"channel_play,omitempty"`
-	//ChannelRecord        *ChannelRecord        `json:"channel_record,omitempty"`
+	ChannelCreate        *ChannelCreate        `json:"channel_create,omitempty"`
+	ChannelContinue      *ChannelContinue      `json:"channel_continue,omitempty"`
+	ChannelDial          *ChannelDial          `json:"channel_dial,omitempty"`
+	ChannelHangup        *ChannelHangup        `json:"channel_hangup,omitempty"`
+	ChannelMOH           *ChannelMOH           `json:"channel_moh,omitempty"`
+	ChannelMute          *ChannelMute          `json:"channel_mute,omitempty"`
+	ChannelOriginate     *ChannelOriginate     `json:"channel_originate,omitempty"`
+	ChannelPlay          *ChannelPlay          `json:"channel_play,omitempty"`
+	ChannelRecord        *ChannelRecord        `json:"channel_record,omitempty"`
 	ChannelSendDTMF      *ChannelSendDTMF      `json:"channel_send_dtmf,omitempty"`
 	ChannelSnoop         *ChannelSnoop         `json:"channel_snoop,omitempty"`
 	ChannelExternalMedia *ChannelExternalMedia `json:"channel_external_media,omitempty"`
@@ -137,13 +137,13 @@ type BridgePlay struct {
 }
 
 // BridgeRecord is the request for recording a bridge
-//type BridgeRecord struct {
-//	// Name is the name for the recording
-//	Name string `json:"name"`
-//
-// Options is the list of recording Options
-//	Options *arioptions.RecordingOptions `json:"options,omitempty"`
-//}
+type BridgeRecord struct {
+	//	// Name is the name for the recording
+	Name string `json:"name"`
+
+	// Options is the list of recording Options
+	Options *arioptions.RecordingOptions `json:"options,omitempty"`
+}
 
 // BridgeRemoveChannel is the request for removing a channel on the bridge
 type BridgeRemoveChannel struct {
@@ -218,13 +218,13 @@ type ChannelPlay struct {
 }
 
 // ChannelRecord is the request for recording a channel
-//type ChannelRecord struct {
-//	// Name is the name for the recording/
-//	Name string `json:"name"`
-//
-// Options is the list of recording Options
-//	Options *arioptions.RecordingOptions `json:"options,omitempty"`
-//}
+type ChannelRecord struct {
+	// Name is the name for the recording/
+	Name string `json:"name"`
+
+	// Options is the list of recording Options
+	Options *arioptions.RecordingOptions `json:"options,omitempty"`
+}
 
 // ChannelSendDTMF is the request for sending a DTMF event to a channel
 type ChannelSendDTMF struct {
