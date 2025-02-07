@@ -16,3 +16,7 @@ const (
 	// DirectionBoth indicates both the directions flowing both inward to Asterisk and outward from Asterisk.
 	DirectionBoth Direction = "both"
 )
+
+func (d Direction) String() string {
+	return string(d)
+}

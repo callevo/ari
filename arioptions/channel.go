@@ -32,7 +32,7 @@ type SnoopOptions struct {
 	App string `json:"app"`
 
 	// AppArgs is the set of arguments to pass with the newly-created Snoop channel's entry into ARI.
-	AppArgs string `json:"appArgs,omitempty"`
+	AppArgs string `json:"app_args,omitempty"`
 
 	// Spy describes the direction of audio on which to spy (none, in, out, both).
 	// The default is 'none'.
@@ -67,7 +67,7 @@ type ExternalMediaOptions struct {
 	Format string `json:"format"`
 
 	// Direction specifies the directionality of the audio stream.  Options include 'both'.  This parameter is optional and if not specified, 'both' will be used.
-	Direction string `json:"direction"`
+	Direction Direction `json:"direction"`
 
 	// Variables defines the set of channel variables which should be bound to this channel upon creation.  This parameter is optional.
 	Variables map[string]string `json:"variables"`

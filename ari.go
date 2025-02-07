@@ -2,6 +2,7 @@ package ari
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -21,6 +22,7 @@ import (
 	"github.com/callevo/ari/response"
 	"github.com/lrita/cmap"
 	nats "github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 	"github.com/rotisserie/eris"
 )
 
@@ -69,6 +71,37 @@ func Subject(prefix, appName, class, asterisk string) (ret string) {
 
 type StasisHandler func(*ARIClient, *channel.ChannelHandle, *arievent.StasisEvent)
 
+func (a *ARIClient) ApplicationName() string {
+	return a.Application
+}
+
+func (a *ARIClient) Create(ctx context.Context, opts *Options) error {
+	a.NATSUrl = opts.NatsUrl
+	a.ConnectionName = opts.ConnectionName
+	a.Application = opts.Application
+
+	cfg := messagebus.Config{
+		URL:            a.NATSUrl,
+		NatsTimeout:    10 * time.Second,
+		RequestTimeout: 3 * time.Second,
+		ConnectionName: a.ConnectionName,
+		PingInterval:   20 * time.Second,
+		MaxReconnects:  10,
+		MaxPing:        3,
+	}
+
+	a.sbus = messagebus.NewNatsBus(cfg)
+
+	err := a.sbus.Connect()
+	if err != nil {
+		return err
+	}
+
+	a._dispatcher = dispatcher.NewDispatcher()
+
+	return nil
+}
+
 func (a *ARIClient) Listen(ctx context.Context, opts *Options, exechandler StasisHandler) error {
 	logs.TLogger.Debug().Msg("Entering in listening mode")
 
@@ -107,7 +140,7 @@ func (a *ARIClient) Listen(ctx context.Context, opts *Options, exechandler Stasi
 		return eris.Wrap(err, "failed to listen to proxy announcements")
 	}
 
-	logs.TLogger.Debug().Msg("Queue subscribing to stasisstart events %s")
+	logs.TLogger.Debug().Msgf("Queue subscribing to stasisstart events %s", a.ConnectionName+"."+a.Application+".*.*.stasisstart.>")
 	a.proxysubs, err = a.sbus.SubscribeEvent(a.ConnectionName+"."+a.Application+".*.*.stasisstart.>", func(o *arievent.StasisEvent) {
 		logs.TLogger.Debug().Msgf("O: %+v", o)
 
@@ -119,13 +152,15 @@ func (a *ARIClient) Listen(ctx context.Context, opts *Options, exechandler Stasi
 
 		h := channel.NewChannelHandle(k, &ichannel{c: a}, nil)
 
-		go exechandler(a, h, o)
+		if exechandler != nil {
+			go exechandler(a, h, o)
+		}
 
 		channelTopic := a.ConnectionName + "." + a.Application + "." + o.Node + "." + strings.ReplaceAll(o.Channel.ID, ".", "#")
 		logs.TLogger.Debug().Msgf("subscribing client to %s", channelTopic)
 		dynSub, err := a.sbus.DynSubscription(channelTopic, func(o *arievent.StasisEvent) {
 
-			logs.TLogger.Debug().Msgf("O: %+v", o)
+			//logs.TLogger.Debug().Msgf("O: %+v", o)
 
 			//dispatching the event to the listeners
 			a._dispatcher.Dispatch(o)
@@ -204,6 +239,18 @@ func (a *ARIClient) Listen(ctx context.Context, opts *Options, exechandler Stasi
 	return ctx.Err()
 }
 
+func (a *ARIClient) Messagebus() *nats.Conn {
+	return a.sbus.Connection()
+}
+
+func (a *ARIClient) KeyValue() jetstream.KeyValue {
+	return a.sbus.KeyValue()
+}
+
+func (a *ARIClient) JetStream() jetstream.JetStream {
+	return a.sbus.JetStream()
+}
+
 func (a *ARIClient) Channel() channel.Channel {
 	return &ichannel{a}
 }
@@ -252,10 +299,10 @@ func (c *ARIClient) completeCoordinates(req *requests.Request) bool {
 
 func (c *ARIClient) makeRequest(class string, req *requests.Request) (*response.Response, error) {
 	//var resp response.Response
-	var err error
+	//var err error
 
 	if !c.completeCoordinates(req) {
-		return nil, err
+		return nil, eris.New("Uncomplete request")
 	}
 
 	logs.TLogger.Debug().Msgf("Sending request to %s for %s", c.subject(class, req), req.Kind)
@@ -339,7 +386,13 @@ func (c *ARIClient) createRequest(req *requests.Request) (*key.Key, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if resp == nil {
+		return nil, fmt.Errorf("empty response")
+	}
+
 	if resp.Err() != nil {
+		logs.TLogger.Error().Msgf("Message: %s", resp.Error)
 		return nil, resp.Err()
 	}
 	if resp.Key == nil {

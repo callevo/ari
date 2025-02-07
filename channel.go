@@ -6,6 +6,7 @@ import (
 	"github.com/callevo/ari/arioptions"
 	"github.com/callevo/ari/channel"
 	"github.com/callevo/ari/key"
+	"github.com/callevo/ari/logs"
 	"github.com/callevo/ari/play"
 	"github.com/callevo/ari/recordings"
 	"github.com/callevo/ari/requests"
@@ -73,7 +74,15 @@ func (c *ichannel) Congestion(key *key.Key) error {
 }
 
 func (c *ichannel) Get(key *key.Key) *channel.ChannelHandle {
-	return nil
+	k, err := c.c.getRequest(&requests.Request{
+		Kind: "ChannelGet",
+		Key:  key,
+	})
+	if err != nil {
+		logs.TLogger.Warn().Msgf("failed to make data request for channel %s", err)
+		return channel.NewChannelHandle(key, c, nil)
+	}
+	return channel.NewChannelHandle(k, c, nil)
 }
 
 func (c *ichannel) Hangup(key *key.Key, reason string) error {
@@ -160,6 +169,10 @@ func (c *ichannel) SendDTMF(key *key.Key, dtmf string, opts *arioptions.DTMFOpti
 }
 
 func (c *ichannel) Snoop(ikey *key.Key, snoopID string, opts *arioptions.SnoopOptions) (*channel.ChannelHandle, error) {
+
+	if opts.App == "" {
+		opts.App = c.c.ApplicationName()
+	}
 	k, err := c.c.createRequest(&requests.Request{
 		Kind: "ChannelSnoop",
 		Key:  ikey,

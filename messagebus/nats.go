@@ -1,6 +1,7 @@
 package messagebus
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -11,6 +12,7 @@ import (
 	requests "github.com/callevo/ari/requests"
 	"github.com/callevo/ari/response"
 	nats "github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 )
 
 // DefaultReconnectionAttemts is the default number of reconnection attempts
@@ -38,6 +40,8 @@ type NatsBus struct {
 	conn            *nats.Conn
 	ConnectedServer string
 	ReconnHandler   nats.ConnHandler
+	JS              jetstream.JetStream
+	KV              jetstream.KeyValue
 }
 
 // OptionNatsFunc options for RabbitMQ
@@ -81,6 +85,14 @@ func WithReconnectionHandler(cb nats.ConnHandler) OptionNatsFunc {
 	}
 }
 
+func (n *NatsBus) JetStream() jetstream.JetStream {
+	return n.JS
+}
+
+func (n *NatsBus) KeyValue() jetstream.KeyValue {
+	return n.KV
+}
+
 // Connect creates a NATS connection
 func (n *NatsBus) Connect() error {
 	var err error
@@ -105,6 +117,22 @@ func (n *NatsBus) Connect() error {
 			}
 		}),
 	)
+	if err != nil {
+		logs.TLogger.Error().Msg(err.Error())
+
+		return err
+	}
+
+	n.JS, err = jetstream.New(n.conn)
+	if err != nil {
+		logs.TLogger.Error().Msg(err.Error())
+
+		return err
+	}
+
+	n.KV, err = n.JS.CreateOrUpdateKeyValue(context.TODO(), jetstream.KeyValueConfig{
+		Bucket: "Callqueues",
+	})
 	if err != nil {
 		logs.TLogger.Error().Msg(err.Error())
 
@@ -163,7 +191,7 @@ func (n *NatsBus) SubscribeEvent(topic string, callback EventHandler) (*nats.Sub
 
 		evt := arievent.StasisEvent{}
 
-		logs.TLogger.Debug().Msgf("We got %s", (string)(msg.Data))
+		//logs.TLogger.Debug().Msgf("We got %s", (string)(msg.Data))
 
 		err := json.Unmarshal(msg.Data, &evt)
 		if err != nil {
@@ -224,4 +252,8 @@ func (n *NatsBus) Request(topic string, r *requests.Request) (*response.Response
 	}
 
 	return resp, nil
+}
+
+func (n *NatsBus) Connection() *nats.Conn {
+	return n.conn
 }

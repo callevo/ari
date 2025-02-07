@@ -1,6 +1,8 @@
 package arioptions
 
-import "time"
+import (
+	"time"
+)
 
 // RecordingOptions describes the set of options available when making a recording.
 type RecordingOptions struct {
@@ -31,3 +33,17 @@ type RecordingOptions struct {
 	// If not specified, it will default to "none" (never terminate on DTMF).
 	Terminate string
 }
+
+/*
+func defaultOptions() *RecordingOptions {
+	return &RecordingOptions{
+		Beep:        false,
+		Format:      "wav",
+		Exists:      "fail",
+		MaxDuration: recordings.DefaultMaximumDuration,
+		MaxSilence:  recordings.DefaultMaximumSilence,
+		//name:        rid.New(rid.Recording),
+		terminateOn: "none",
+	}
+}
+*/
